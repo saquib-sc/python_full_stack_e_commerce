@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 960px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+      color: #222;
+      background: #fafafa;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid #ddd;
+    }
+    .form-box {
+      background: #fff;
+      border: 1px solid #e2e2e2;
+      border-radius: 6px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 2rem;
+    }
+    .field {
+      margin-bottom: 0.75rem;
+    }
+    label {
+      display: block;
+      font-size: 0.9rem;
+      margin-bottom: 0.25rem;
+    }
+    input[type="text"],
+    input[type="number"],
+    textarea {
+      width: 100%;
+      padding: 0.5rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font: inherit;
+    }
+    button {
+      padding: 0.45rem 0.9rem;
+      border: 1px solid #222;
+      background: #222;
+      color: #fff;
+      border-radius: 4px;
+      cursor: pointer;
+      font: inherit;
+    }
+    button.delete-btn {
+      background: transparent;
+      color: #b91c1c;
+      border-color: #b91c1c;
+      padding: 0.3rem 0.65rem;
+      font-size: 0.85rem;
+    }
+    .error {
+      color: #b91c1c;
+      font-size: 0.9rem;
+      margin-bottom: 0.75rem;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 1rem;
+    }
+    .card {
+      background: #fff;
+      border: 1px solid #e2e2e2;
+      border-radius: 6px;
+      padding: 0.75rem;
+    }
+    .card img,
+    .no-img {
+      width: 100%;
+      height: 150px;
+      object-fit: cover;
+      border-radius: 4px;
+      margin-bottom: 0.5rem;
+      background: #eee;
+    }
+    .no-img {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #666;
+      font-size: 0.85rem;
+    }
+    .card h3 {
+      margin: 0.25rem 0;
+      font-size: 1rem;
+    }
+    .price {
+      font-weight: 600;
+      margin: 0.25rem 0;
+    }
+    .desc {
+      font-size: 0.9rem;
+      color: #555;
+      margin: 0.25rem 0 0.75rem;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h2>Products Dashboard</h2>
+    <div>
+      {% if request.user.is_authenticated %}
+        <span>Hi, {{ request.user.username }}</span> |
+        <a href="{% url 'logout' %}">Logout</a>
+      {% else %}
+        <a href="{% url 'login' %}">Login</a> |
+        <a href="{% url 'register' %}">Register</a>
+      {% endif %}
+    </div>
+  </header>
+
+  {% if request.user.is_authenticated %}
+    <section class="form-box">
+      <h3>Add Product</h3>
+      {% if product_error %}
+        <p class="error">{{ product_error }}</p>
+      {% endif %}
+      <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="field">
+          <label for="id_name">Name</label>
+          <input type="text" id="id_name" name="name" maxlength="25" value="{{ name|default:'' }}" required>
+        </div>
+        <div class="field">
+          <label for="id_price">Price</label>
+          <input type="number" id="id_price" name="price" step="0.01" min="0" value="{{ price|default:'' }}" required>
+        </div>
+        <div class="field">
+          <label for="id_description">Description</label>
+          <textarea id="id_description" name="description" rows="2" required>{{ description|default:'' }}</textarea>
+        </div>
+        <div class="field">
+          <label for="id_image">Image (optional)</label>
+          <input type="file" id="id_image" name="image" accept="image/*">
+        </div>
+        <button type="submit">Add Product</button>
+      </form>
+    </section>
+  {% endif %}
+
+  <section class="grid">
+    {% for product in products %}
+      <article class="card">
+        {% if product.image %}
+          <img src="{{ product.image.url }}" alt="{{ product.name }}">
+        {% else %}
+          <div class="no-img">No image</div>
+        {% endif %}
+        <h3>{{ product.name }}</h3>
+        <p class="price">₹{{ product.price }}</p>
+        <p class="desc">{{ product.description }}</p>
+        {% if request.user.is_authenticated %}
+          <form method="POST" action="{% url 'delete_product' product.pk %}">
+            {% csrf_token %}
+            <button type="submit" class="delete-btn">Delete</button>
+          </form>
+        {% endif %}
+      </article>
+    {% empty %}
+      <p>No products yet.</p>
+    {% endfor %}
+  </section>
+</body>
+</html>

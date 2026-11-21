@@ -1,0 +1,63 @@
+path('dashboard/',views.dashboard,name='dashboard'),
+path('logout/',views.logout_page,name='logout'),
+
+
+views.py
+from django.shortcuts import render,redirect
+from django.contrib.auth import authenticate,login,logout
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
+
+def login_page(request):
+    if request.method=="POST":
+        username=request.POST.get("Username")
+        password=request.POST.get("Password")
+        user=authenticate(request,username=username,password=password)
+
+        if user is not None:
+            login(request,user)
+            return redirect('dashboard')
+        else:
+            return render(request,'accounts/login.html',{'error' : "invalid username or password"})
+    return render(request,'accounts/login.html')
+
+@login_required(login_url='login')
+def dashboard(request):
+    return render(request,'accounts/dashboard.html')
+
+def logout_page(request):
+    logout(request)
+    return redirect('login')
+
+def register_page(request):
+    if request.user.is_authenticated:
+        return redirect("dashboard")
+
+    if request.method == "POST":
+        username = request.POST.get("username")
+        email = request.POST.get("email")
+        password = request.POST.get("password")
+        confirm_password = request.POST.get("confirm_password")
+
+        if not username or not password:
+            return render(
+                request,
+                "accounts/register.html",
+                {"error": "Username and password are required.", "username": username, "email": email},
+            )
+
+        if password != confirm_password:
+            return render(
+                request,
+                "accounts/register.html",
+                {"error": "Passwords do not match.", "username": username, "email": email},
+            )
+        
+        user = User.objects.create_user(username=username, email=email, password=password)
+        login(request, user)
+        return redirect("dashboard")
+
+    return render(request, "accounts/register.html")
+
+def home(request):
+    return render(request,'accounts/home.html')
